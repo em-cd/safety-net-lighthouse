@@ -9,7 +9,7 @@ defmodule LighthouseWeb.SafetyNetLive do
 
       <div style="position: relative; width: 712px; height: 710px; background-color: lightblue;">
         <!-- Loop through ships and position them based on their coordinates -->
-        <%= for {id, ship} <- @ships do %>
+        <%= for {id, %{coords: {x, y}} = ship} <- @ships do %>
         <div
             id="ship_<%= id %>"
             phx-update="replace"
@@ -20,7 +20,7 @@ defmodule LighthouseWeb.SafetyNetLive do
         <% end %>
       </div>
 
-      <div class="px-4">
+      <div class="pl-4">
         <h1 class="text-2xl font-medium pb-4">⚓ SafetyNet Lighthouse</h1>
 
         <div class="flex">
@@ -28,15 +28,26 @@ defmodule LighthouseWeb.SafetyNetLive do
             <h2 class="text-xl font-medium pb-2">Ships</h2>
             <%= for {id, ship} <- @ships do %>
               <p><%= id %>:
-                <span class="<%= if ship.status == :failed, do: "text-red-500", else: "" %>">
-                  <%= if ship.status in [:alive, :failed], do: Atom.to_string(ship.status) %>
-                  <%= if match?({:searching_for, _}, ship.status), do: "searching for #{elem(ship.status, 1)}" %>
-                </span>, incarnation: <%= ship.inc %>, peers: <%= ship.peers %>
+                <%= case ship.status do %>
+                  <% :failed -> %>
+                    <span class="text-red-500">
+                      <%= Atom.to_string(ship.status) %>
+                    </span>
+                  <% :alive -> %>
+                    <span class="text-green-500">
+                      <%= Atom.to_string(ship.status) %>
+                    </span>
+                  <% {:searching_for, target} -> %>
+                      <span class="text-blue-500">
+                        searching for <%= target %>
+                      </span>
+                <% end %>
+                , incarnation: <%= ship.inc %>, peers: <%= ship.peers %>
               </p>
             <% end %>
           </div>
 
-          <div class="px-4 w-xs">
+          <div class="w-xs">
             <h2 class="text-xl font-medium pb-2">Messages</h2>
             <%= for msg <- @messages do %>
               <p><%= msg %></p>
@@ -56,7 +67,11 @@ defmodule LighthouseWeb.SafetyNetLive do
 
   def handle_info({:ship_update, %{id: id, status: status, coords: coords, incarnation: inc, peers: peers}}, socket) do
     ships = socket.assigns.ships
-    updated_ships = Map.put(ships, id, %{coords: coords, status: status, inc: inc, peers: peers})
+    updated_ships = Map.put(
+      ships,
+      id,
+      %{coords: coords, status: status, inc: inc, peers: peers}
+    )
     socket = assign(socket, ships: updated_ships)
 
     {:noreply, socket}
