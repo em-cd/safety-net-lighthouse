@@ -1,4 +1,4 @@
-# Lighthouse
+# SafetyNet Lighthouse
 
 To start your Phoenix server:
 
